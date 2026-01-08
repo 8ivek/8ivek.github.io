@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find the Animal Pairs</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f0f2f5; }
+        .grid { 
+            display: grid; grid-template-columns: repeat(5, 100px); 
+            gap: 10px; justify-content: center; margin-top: 20px; 
+        }
+        .card {
+            width: 100px; height: 130px; background: #2e3d49;
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; font-size: 2rem; border-radius: 8px;
+            color: transparent; transition: transform 0.3s;
+        }
+        .card.flipped { background: white; color: black; transform: rotateY(180deg); }
+        .card.matched { background: #81c784; color: black; cursor: default; }
+        #message { font-size: 1.5rem; margin-top: 20px; font-weight: bold; min-height: 30px; }
+        button { margin-top: 20px; padding: 10px 20px; font-size: 1rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h1>Find the Animal Pairs</h1>
+    <div id="message">Memorize the cards!</div>
+    <div class="grid" id="grid"></div>
+    <button onclick="startGame()">Restart Game</button>
+
+    <script>
+        const animals = ['🐄', '🐅', '🐱', '🐶', '🐒', '🐄', '🐅', '🐱', '🐶', '🐒'];
+        let flippedCards = [];
+        let matchedCount = 0;
+        let canClick = false;
+
+        function startGame() {
+            const grid = document.getElementById('grid');
+            const message = document.getElementById('message');
+            grid.innerHTML = '';
+            flippedCards = [];
+            matchedCount = 0;
+            canClick = false;
+            message.innerText = "Memorize the cards!";
+            message.style.color = "black";
+
+            // Shuffle
+            const shuffled = animals.sort(() => 0.5 - Math.random());
+
+            // Create Cards
+            shuffled.forEach((animal, index) => {
+                const card = document.createElement('div');
+                card.classList.add('card', 'flipped'); // Start flipped to show animals
+                card.dataset.animal = animal;
+                card.innerText = animal;
+                card.onclick = () => handleCardClick(card);
+                grid.appendChild(card);
+            });
+
+            // Show for 3 seconds, then hide
+            setTimeout(() => {
+                document.querySelectorAll('.card').forEach(card => card.classList.remove('flipped'));
+                message.innerText = "Find the pairs!";
+                canClick = true;
+            }, 3000);
+        }
+
+        function handleCardClick(card) {
+            if (!canClick || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                canClick = false;
+                const [card1, card2] = flippedCards;
+
+                if (card1.dataset.animal === card2.dataset.animal) {
+                    // Match found
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    matchedCount += 2;
+                    flippedCards = [];
+                    canClick = true;
+
+                    if (matchedCount === animals.length) {
+                        document.getElementById('message').innerText = "🎉 YOU WON!";
+                        document.getElementById('message').style.color = "green";
+                    }
+                } else {
+                    // Wrong pair - Game Over
+                    document.getElementById('message').innerText = "❌ YOU LOSE!";
+                    document.getElementById('message').style.color = "red";
+                    canClick = false; // Stop the game
+                }
+            }
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
