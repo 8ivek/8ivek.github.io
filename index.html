@@ -5,29 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Find the Animal Pairs</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f0f2f5; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #f4f7f6; color: #333; }
         .grid { 
             display: grid; grid-template-columns: repeat(5, 100px); 
-            gap: 10px; justify-content: center; margin-top: 20px; 
+            gap: 12px; justify-content: center; margin: 20px auto; 
         }
         .card {
-            width: 100px; height: 130px; background: #2e3d49;
+            width: 100px; height: 130px; background: #34495e;
             cursor: pointer; display: flex; align-items: center;
-            justify-content: center; font-size: 2rem; border-radius: 8px;
-            color: transparent; transition: transform 0.3s;
+            justify-content: center; font-size: 2.5rem; border-radius: 12px;
+            color: transparent; transition: transform 0.4s, background 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .card.flipped { background: white; color: black; transform: rotateY(180deg); }
-        .card.matched { background: #81c784; color: black; cursor: default; }
-        #message { font-size: 1.5rem; margin-top: 20px; font-weight: bold; min-height: 30px; }
-        button { margin-top: 20px; padding: 10px 20px; font-size: 1rem; cursor: pointer; }
+        /* State: Flipped or Matched */
+        .card.flipped, .card.reveal { background: white; color: black; transform: rotateY(180deg); }
+        .card.matched { background: #4CAF50; color: white; cursor: default; transform: rotateY(180deg); }
+        
+        #message { font-size: 1.8rem; margin: 20px; font-weight: bold; height: 40px; }
+        
+        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
+        button { 
+            padding: 12px 24px; font-size: 1rem; cursor: pointer; border: none; 
+            border-radius: 5px; transition: background 0.2s; 
+        }
+        .btn-restart { background: #3498db; color: white; }
+        .btn-reveal { background: #e67e22; color: white; display: none; } /* Hidden by default */
+        button:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
 
     <h1>Find the Animal Pairs</h1>
     <div id="message">Memorize the cards!</div>
+    
     <div class="grid" id="grid"></div>
-    <button onclick="startGame()">Restart Game</button>
+
+    <div class="controls">
+        <button class="btn-restart" onclick="startGame()">Restart Game</button>
+        <button id="revealBtn" class="btn-reveal" onclick="revealAll()">Reveal Board</button>
+    </div>
 
     <script>
         const animals = ['🐄', '🐅', '🐱', '🐶', '🐒', '🐄', '🐅', '🐱', '🐶', '🐒'];
@@ -38,27 +54,30 @@
         function startGame() {
             const grid = document.getElementById('grid');
             const message = document.getElementById('message');
+            const revealBtn = document.getElementById('revealBtn');
+            
             grid.innerHTML = '';
             flippedCards = [];
             matchedCount = 0;
             canClick = false;
+            revealBtn.style.display = "none"; // Hide reveal button on new game
             message.innerText = "Memorize the cards!";
-            message.style.color = "black";
+            message.style.color = "#333";
 
-            // Shuffle
-            const shuffled = animals.sort(() => 0.5 - Math.random());
+            // Shuffle animals
+            const shuffled = [...animals].sort(() => 0.5 - Math.random());
 
-            // Create Cards
-            shuffled.forEach((animal, index) => {
+            // Create Card Elements
+            shuffled.forEach((animal) => {
                 const card = document.createElement('div');
-                card.classList.add('card', 'flipped'); // Start flipped to show animals
+                card.classList.add('card', 'flipped'); 
                 card.dataset.animal = animal;
                 card.innerText = animal;
                 card.onclick = () => handleCardClick(card);
                 grid.appendChild(card);
             });
 
-            // Show for 3 seconds, then hide
+            // Initial 3-second peek
             setTimeout(() => {
                 document.querySelectorAll('.card').forEach(card => card.classList.remove('flipped'));
                 message.innerText = "Find the pairs!";
@@ -73,30 +92,39 @@
             flippedCards.push(card);
 
             if (flippedCards.length === 2) {
-                canClick = false;
                 const [card1, card2] = flippedCards;
 
                 if (card1.dataset.animal === card2.dataset.animal) {
-                    // Match found
+                    // Success: It's a match
                     card1.classList.add('matched');
                     card2.classList.add('matched');
                     matchedCount += 2;
                     flippedCards = [];
-                    canClick = true;
 
                     if (matchedCount === animals.length) {
                         document.getElementById('message').innerText = "🎉 YOU WON!";
-                        document.getElementById('message').style.color = "green";
+                        document.getElementById('message').style.color = "#2ecc71";
+                        canClick = false;
                     }
                 } else {
-                    // Wrong pair - Game Over
+                    // Fail: Show "You Lose" and the Reveal button
                     document.getElementById('message').innerText = "❌ YOU LOSE!";
-                    document.getElementById('message').style.color = "red";
-                    canClick = false; // Stop the game
+                    document.getElementById('message').style.color = "#e74c3c";
+                    document.getElementById('revealBtn').style.display = "block";
+                    canClick = false; 
                 }
             }
         }
 
+        function revealAll() {
+            // Flip every card that isn't already matched
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.add('reveal');
+            });
+            document.getElementById('revealBtn').style.display = "none";
+        }
+
+        // Initialize game on load
         startGame();
     </script>
 </body>
