@@ -2,35 +2,111 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Find the Animal Pairs</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #f4f7f6; color: #333; }
-        .grid { 
-            display: grid; grid-template-columns: repeat(5, 100px); 
-            gap: 12px; justify-content: center; margin: 20px auto; 
+        :root {
+            --bg-color: #f0f4f8;
+            --card-back: #2c3e50;
+            --card-front: #ffffff;
+            --accent: #3498db;
+            --success: #27ae60;
+            --fail: #e74c3c;
         }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            text-align: center; 
+            background: var(--bg-color); 
+            margin: 0; 
+            padding: 10px;
+            touch-action: manipulation; /* Prevents accidental zooming on taps */
+        }
+
+        h1 { font-size: 1.5rem; margin-bottom: 10px; }
+
+        #message { 
+            font-size: 1.2rem; 
+            margin: 15px 0; 
+            font-weight: bold; 
+            min-height: 1.5em; 
+        }
+
+        /* Update the Grid Logic */
+		.grid { 
+			display: grid; 
+			grid-template-columns: repeat(5, 1fr); /* Desktop */
+			gap: 8px; 
+			max-width: 500px; 
+			margin: 0 auto; 
+		}
+
+		/* Update this specific Media Query for Phones */
+		@media (max-width: 480px) {
+			.grid { 
+				grid-template-columns: repeat(3, 1fr); /* 3 columns makes cards smaller */
+				max-width: 300px; /* Limits the overall width of the game area */
+				gap: 6px;
+			}
+			
+			.card {
+				font-size: 1.8rem; /* Shrinks the emoji size slightly to fit smaller cards */
+			}
+		}
+
         .card {
-            width: 100px; height: 130px; background: #34495e;
-            cursor: pointer; display: flex; align-items: center;
-            justify-content: center; font-size: 2.5rem; border-radius: 12px;
-            color: transparent; transition: transform 0.4s, background 0.3s;
+            aspect-ratio: 3 / 4; 
+			background: var(--card-back);
+            cursor: pointer; 
+            display: flex; 
+            align-items: center;
+            justify-content: center; 
+            font-size: 2.5rem; 
+            border-radius: 10px;
+            color: transparent; 
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            user-select: none;
+        }
+
+        .card.flipped, .card.reveal { 
+            background: var(--card-front); 
+            color: #000; 
+            transform: rotateY(180deg); 
+        }
+
+        .card.matched { 
+            background: var(--success); 
+            color: white; 
+            transform: rotateY(180deg); 
+            cursor: default;
+        }
+
+        .controls { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 10px; 
+            margin-top: 25px; 
+        }
+
+        button { 
+            width: 80%;
+            max-width: 200px;
+            padding: 15px; 
+            font-size: 1.1rem; 
+            font-weight: bold;
+            cursor: pointer; 
+            border: none; 
+            border-radius: 30px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        /* State: Flipped or Matched */
-        .card.flipped, .card.reveal { background: white; color: black; transform: rotateY(180deg); }
-        .card.matched { background: #4CAF50; color: white; cursor: default; transform: rotateY(180deg); }
-        
-        #message { font-size: 1.8rem; margin: 20px; font-weight: bold; height: 40px; }
-        
-        .controls { display: flex; gap: 10px; justify-content: center; margin-top: 20px; }
-        button { 
-            padding: 12px 24px; font-size: 1rem; cursor: pointer; border: none; 
-            border-radius: 5px; transition: background 0.2s; 
-        }
-        .btn-restart { background: #3498db; color: white; }
-        .btn-reveal { background: #e67e22; color: white; display: none; } /* Hidden by default */
-        button:hover { opacity: 0.9; }
+
+        .btn-restart { background: var(--accent); color: white; }
+        .btn-reveal { background: #e67e22; color: white; display: none; }
+
+        /* Small tap animation */
+        button:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
@@ -41,8 +117,8 @@
     <div class="grid" id="grid"></div>
 
     <div class="controls">
-        <button class="btn-restart" onclick="startGame()">Restart Game</button>
-        <button id="revealBtn" class="btn-reveal" onclick="revealAll()">Reveal Board</button>
+        <button class="btn-restart" onclick="startGame()">New Game</button>
+        <button id="revealBtn" class="btn-reveal" onclick="revealAll()">Reveal Pairs</button>
     </div>
 
     <script>
@@ -60,14 +136,12 @@
             flippedCards = [];
             matchedCount = 0;
             canClick = false;
-            revealBtn.style.display = "none"; // Hide reveal button on new game
+            revealBtn.style.display = "none";
             message.innerText = "Memorize the cards!";
             message.style.color = "#333";
 
-            // Shuffle animals
             const shuffled = [...animals].sort(() => 0.5 - Math.random());
 
-            // Create Card Elements
             shuffled.forEach((animal) => {
                 const card = document.createElement('div');
                 card.classList.add('card', 'flipped'); 
@@ -77,10 +151,9 @@
                 grid.appendChild(card);
             });
 
-            // Initial 3-second peek
             setTimeout(() => {
                 document.querySelectorAll('.card').forEach(card => card.classList.remove('flipped'));
-                message.innerText = "Find the pairs!";
+                message.innerText = "Go! Tap a pair.";
                 canClick = true;
             }, 3000);
         }
@@ -95,21 +168,19 @@
                 const [card1, card2] = flippedCards;
 
                 if (card1.dataset.animal === card2.dataset.animal) {
-                    // Success: It's a match
                     card1.classList.add('matched');
                     card2.classList.add('matched');
                     matchedCount += 2;
                     flippedCards = [];
 
                     if (matchedCount === animals.length) {
-                        document.getElementById('message').innerText = "🎉 YOU WON!";
-                        document.getElementById('message').style.color = "#2ecc71";
+                        document.getElementById('message').innerText = "🏆 WINNER!";
+                        document.getElementById('message').style.color = "var(--success)";
                         canClick = false;
                     }
                 } else {
-                    // Fail: Show "You Lose" and the Reveal button
-                    document.getElementById('message').innerText = "❌ YOU LOSE!";
-                    document.getElementById('message').style.color = "#e74c3c";
+                    document.getElementById('message').innerText = "❌ GAME OVER";
+                    document.getElementById('message').style.color = "var(--fail)";
                     document.getElementById('revealBtn').style.display = "block";
                     canClick = false; 
                 }
@@ -117,14 +188,10 @@
         }
 
         function revealAll() {
-            // Flip every card that isn't already matched
-            document.querySelectorAll('.card').forEach(card => {
-                card.classList.add('reveal');
-            });
+            document.querySelectorAll('.card').forEach(card => card.classList.add('reveal'));
             document.getElementById('revealBtn').style.display = "none";
         }
 
-        // Initialize game on load
         startGame();
     </script>
 </body>
